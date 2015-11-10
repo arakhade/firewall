@@ -49,7 +49,7 @@ unsigned int pre_hook(unsigned int hooknum,
 
 		/* Rule for ICMP requests */
 		if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
-		    (( (ip_hdr(sock_buff))->protocol ) != 1))
+		    (( (ip_hdr(sock_buff))->protocol ) == 1))
 		{ 
 			printk("Dropped. Cause: ICMP, from interface %s, destination= %s\n", in->name, dest_ip);
 			return NF_DROP;
