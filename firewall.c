@@ -16,8 +16,8 @@
 #include <linux/skbuff.h>
 #include <linux/udp.h>
 
-#define PRIVATE_INTERFACE "eth0"
-#define WEB_SERVER_IP     "\xC0\xA8\x04\x01" //192.168.4.1
+#define PRIVATE_INTERFACE "eth2"
+#define WEB_SERVER_IP     "\xC0\xA8\x01\x03" //192.168.1.3
 #define SSH_PORT          "\x00\x16"
 #define HTTP_PORT         "\x00\x50"
 
@@ -40,9 +40,14 @@ unsigned int pre_hook(unsigned int hooknum,
 
 	if(in)
 	{
+		/* Rule for packets from private network */
+		if(strcmp(in->name, PRIVATE_INTERFACE) == 0) 
+		{ 
+			return NF_ACCEPT;
+		}
+
 		/* Rule for ICMP requests */
-		if(!(strcmp(in->name, PRIVATE_INTERFACE) == 0) &&
-		    !((ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP) && 
+		if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
 		    (( (ip_hdr(sock_buff))->protocol ) != 1))
 		{ 
 			printk("Dropped. Cause: ICMP, from interface %s, destination= %s\n", in->name, dest_ip);
@@ -50,16 +55,14 @@ unsigned int pre_hook(unsigned int hooknum,
 		}
 
 		/* Rule for ssh connections */
-		if(!(strcmp(in->name, PRIVATE_INTERFACE) == 0) && 
-		    (udp_header->dest == *(unsigned short *)SSH_PORT))
+		if(udp_header->dest == *(unsigned short *)SSH_PORT)
 		{ 
 			printk("Dropped. Cause: SSH, from interface %s, destination= %s\n", in->name, dest_ip);
 			return NF_DROP;
 		}
 
 		/* Rule for HTTP requests */
-		if(!(strcmp(in->name, PRIVATE_INTERFACE) == 0) &&
-		    !((ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP) && 
+		if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
 		    (udp_header->dest == *(unsigned short *)HTTP_PORT))
 		{ 
 			printk("Dropped. Cause: HTTP, from interface %s, destination= %s\n", in->name, dest_ip);
