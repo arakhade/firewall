@@ -17,6 +17,7 @@
 #include <linux/udp.h>
 
 #define PRIVATE_INTERFACE "eth2"
+#define GENI_INTERFACE    "eth0" // for testing through GENI
 #define WEB_SERVER_IP     "\xC0\xA8\x01\x03" //192.168.1.3
 #define SSH_PORT          "\x00\x16"
 #define HTTP_PORT         "\x00\x50"
@@ -40,8 +41,8 @@ unsigned int pre_hook(unsigned int hooknum,
 
 	if(in)
 	{
-		/* Rule for packets from private network */
-		if(strcmp(in->name, PRIVATE_INTERFACE) == 0) 
+		/* Rule for packets from private network or through GENI */
+		if( (strcmp(in->name, PRIVATE_INTERFACE) == 0) || (strcmp(in->name, GENI_INTERFACE) == 0) )
 		{ 
 			return NF_ACCEPT;
 		}
