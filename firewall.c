@@ -17,6 +17,8 @@
 #include <linux/tcp.h>
 #include <linux/icmp.h>
 
+MODULE_LICENSE("GPL");
+
 #define PRIVATE_INTERFACE "eth2"
 #define GENI_INTERFACE    "eth0" // for testing through GENI
 #define WEB_SERVER_IP     "\xC0\xA8\x01\x03" //192.168.1.3
