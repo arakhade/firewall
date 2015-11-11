@@ -14,7 +14,8 @@
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/skbuff.h>
-#include <linux/udp.h>
+#include <linux/tcp.h>
+#include <linux/icmp.h>
 
 #define PRIVATE_INTERFACE "eth2"
 #define GENI_INTERFACE    "eth0" // for testing through GENI
@@ -24,7 +25,8 @@
 
 static struct nf_hook_ops netfilter_ops_pre;
 struct sk_buff *sock_buff;
-struct udphdr *udp_header;
+struct tcphdr *tcp_header;
+struct icmphdr *icmp_header;
 
 unsigned int pre_hook(unsigned int hooknum,
                        struct sk_buff *skb,
@@ -36,7 +38,6 @@ unsigned int pre_hook(unsigned int hooknum,
 	sock_buff = skb;
 	if(!sock_buff){ return NF_ACCEPT; }
 	if(!(ip_hdr(sock_buff))){ return NF_ACCEPT; }
-	udp_header = (struct udphdr *)(sock_buff->data + (( (ip_hdr(sock_buff))->ihl ) * 4));
 	snprintf(dest_ip, 16, "%pI4", &(ip_hdr(sock_buff))->daddr);
 
 	if(in)
@@ -48,26 +49,36 @@ unsigned int pre_hook(unsigned int hooknum,
 		}
 
 		/* Rule for ICMP requests */
-		if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
-		    (( (ip_hdr(sock_buff))->protocol ) == 1))
-		{ 
-			printk("Dropped. Cause: ICMP, from interface %s, destination= %s\n", in->name, dest_ip);
-			return NF_DROP;
+		if( (ip_hdr(sock_buff))->protocol  == IPPROTO_ICMP)
+		{
+			icmp_header = (struct icmphdr *)(sock_buff->data + (( (ip_hdr(sock_buff))->ihl ) * 4));
+
+			if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) &&
+			   (icmp_header->type == ICMP_ECHO) )
+			{ 
+				printk("Dropped. Cause: ICMP, from interface %s, destination= %s\n", in->name, dest_ip);
+				return NF_DROP;
+			}
 		}
 
-		/* Rule for ssh connections */
-		if(udp_header->dest == *(unsigned short *)SSH_PORT)
-		{ 
-			printk("Dropped. Cause: SSH, from interface %s, destination= %s\n", in->name, dest_ip);
-			return NF_DROP;
-		}
+		else if( (ip_hdr(sock_buff)->protocol) == IPPROTO_TCP )
+		{
+			tcp_header = (struct tcphdr *)(sock_buff->data + (( (ip_hdr(sock_buff))->ihl ) * 4));
 
-		/* Rule for HTTP requests */
-		if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
-		    (udp_header->dest == *(unsigned short *)HTTP_PORT))
-		{ 
-			printk("Dropped. Cause: HTTP, from interface %s, destination= %s\n", in->name, dest_ip);
-			return NF_DROP;
+			/* Rule for ssh connections */
+			if(tcp_header->dest == *(unsigned short *)SSH_PORT)
+			{ 
+				printk("Dropped. Cause: SSH, from interface %s, destination= %s\n", in->name, dest_ip);
+				return NF_DROP;
+			}
+
+			/* Rule for HTTP requests */
+			if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
+			    (tcp_header->dest == *(unsigned short *)HTTP_PORT))
+			{ 
+				printk("Dropped. Cause: HTTP, from interface %s, destination= %s\n", in->name, dest_ip);
+				return NF_DROP;
+			}
 		}
 	}
 	else //if (in)
