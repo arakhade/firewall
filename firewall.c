@@ -58,7 +58,7 @@ unsigned int pre_hook(unsigned int hooknum,
 			if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) &&
 			   (icmp_header->type == ICMP_ECHO) )
 			{ 
-				printk("Dropped. Cause: ICMP, from interface %s, destination= %s\n", in->name, dest_ip);
+				printk(KERN_INFO "Dropped. Cause: ICMP, from interface %s, destination= %s\n", in->name, dest_ip);
 				return NF_DROP;
 			}
 		}
@@ -70,7 +70,7 @@ unsigned int pre_hook(unsigned int hooknum,
 			/* Rule for ssh connections */
 			if(tcp_header->dest == *(unsigned short *)SSH_PORT)
 			{ 
-				printk("Dropped. Cause: SSH, from interface %s, destination= %s\n", in->name, dest_ip);
+				printk(KERN_INFO "Dropped. Cause: SSH, from interface %s, destination= %s\n", in->name, dest_ip);
 				return NF_DROP;
 			}
 
@@ -78,14 +78,14 @@ unsigned int pre_hook(unsigned int hooknum,
 			if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
 			    (tcp_header->dest == *(unsigned short *)HTTP_PORT))
 			{ 
-				printk("Dropped. Cause: HTTP, from interface %s, destination= %s\n", in->name, dest_ip);
+				printk(KERN_INFO "Dropped. Cause: HTTP, from interface %s, destination= %s\n", in->name, dest_ip);
 				return NF_DROP;
 			}
 		}
 	}
 	else //if (in)
 	{
-		printk("Error:Input interface not initialized\n");
+		printk(KERN_ERR "Error:Input interface not initialized\n");
 	}
 
 	/* Accept all other packets */
