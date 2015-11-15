@@ -22,6 +22,7 @@ MODULE_LICENSE("GPL");
 #define PRIVATE_INTERFACE "eth2"
 #define GENI_INTERFACE    "eth0" // for testing through GENI
 #define WEB_SERVER_IP     "\xC0\xA8\x01\x03" //192.168.1.3
+#define GATEWAY_PUBLIC_IP "\xC0\xA8\x03\x01" //192.168.3.1
 #define SSH_PORT          "\x00\x16"
 #define HTTP_PORT         "\x00\x50"
 
@@ -56,6 +57,7 @@ unsigned int pre_hook(unsigned int hooknum,
 			icmp_header = (struct icmphdr *)(sock_buff->data + (( (ip_hdr(sock_buff))->ihl ) * 4));
 
 			if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) &&
+			   !( (ip_hdr(sock_buff))->daddr == *(unsigned int *)GATEWAY_PUBLIC_IP ) &&
 			   (icmp_header->type == ICMP_ECHO) )
 			{ 
 				printk(KERN_INFO "Dropped. Cause: ICMP, from interface %s, destination= %s\n", in->name, dest_ip);
@@ -76,6 +78,7 @@ unsigned int pre_hook(unsigned int hooknum,
 
 			/* Rule for HTTP requests */
 			if(!( (ip_hdr(sock_buff))->daddr == *(unsigned int *)WEB_SERVER_IP ) && 
+			   !( (ip_hdr(sock_buff))->daddr == *(unsigned int *)GATEWAY_PUBLIC_IP ) && 
 			    (tcp_header->dest == *(unsigned short *)HTTP_PORT))
 			{ 
 				printk(KERN_INFO "Dropped. Cause: HTTP, from interface %s, destination= %s\n", in->name, dest_ip);
